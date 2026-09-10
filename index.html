@@ -1,20 +1,856 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" class="h-full">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Repositorio Digital ETRGC - Escuela Técnica Robinsoniana</title>
-    <meta name="description" content="Repositorio Digital de la Escuela Técnica Robinsoniana - Complejo Educativo Gran Colombia con catálogo de proyectos socio-productivos y sincronización en tiempo real." />
-    <meta property="og:title" content="Repositorio Digital ETRGC - Escuela Técnica Robinsoniana" />
-    <meta property="og:description" content="Repositorio Digital de la Escuela Técnica Robinsoniana - Complejo Educativo Gran Colombia con catálogo de proyectos socio-productivos y sincronización en tiempo real." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repositorio Digital E.T.R. G.C</title>
+
+    <!-- Estilos externos -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Librerías externas -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+    <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
   </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-rose-600 selection:text-white">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body>
+    <div class="app-wrapper">
+
+      <!-- CABECERA -->
+      <header>
+        <h1>🏛️ ESCUELA TÉCNICA ROBINSONIANA</h1>
+        <p>COMPLEJO EDUCATIVO "GRAN COLOMBIA"</p>
+        <p>Honrando la memoria de Antonio José de Sucre</p>
+      </header>
+
+      <!-- NAVEGACIÓN -->
+      <nav id="navigation">
+        <button onclick="navigateTo('catalog')" class="nav-inactive" id="nav-catalog">📚 CATÁLOGO</button>
+        <button onclick="navigateTo('upload')"  class="nav-inactive" id="nav-upload">⬆️ CARGAR</button>
+        <button onclick="navigateTo('config')"  class="nav-inactive" id="nav-config">⚙️ CONFIG</button>
+        <button onclick="navigateTo('info')"    class="nav-inactive" id="nav-info">ℹ️ INFO</button>
+      </nav>
+
+      <!-- CONTENIDO PRINCIPAL -->
+      <main id="main-content">
+        <div class="container" id="content"></div>
+      </main>
+
+      <!-- PIE DE PÁGINA -->
+      <footer id="footer">
+        <div class="footer-bottom">
+          <div class="footer-year">🏛️ E.T.R. G.C</div>
+          <div class="footer-offline">
+            <span>📡</span>
+            <span>Offline</span>
+          </div>
+          <div class="footer-credits">A partir de 2026 | En Progreso ✨</div>
+        </div>
+      </footer>
+
+    </div><!-- /.app-wrapper -->
+
+    <script>
+      // ===================== SISTEMA DE ALMACENAMIENTO LOCAL =====================
+      // Sistema completamente offline usando localStorage
+
+      // ===================== CONEXIÓN FIREBASE (OPCIONAL) =====================
+      // Para habilitar Firebase, descomenta el siguiente bloque y configura tus credenciales
+const firebaseConfig = {
+  apiKey: "AIzaSyCU5Zm0vwW21FE2irdoFwOHd0pX2Q76OAE",
+  authDomain: "saitama-1-cf1ba.firebaseapp.com",
+  projectId: "saitama-1-cf1ba",
+  storageBucket: "saitama-1-cf1ba.firebasestorage.app",
+  messagingSenderId: "296838614285",
+  appId: "1:296838614285:web:27b939614496458c7f7444",
+  measurementId: "G-3W50HD67S4"
+};
+
+
+      const scriptApp = document.createElement('script');
+      scriptApp.src = "https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js";
+      const scriptDb  = document.createElement('script');
+      scriptDb.src  = "https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js";
+      document.head.appendChild(scriptApp);
+      document.head.appendChild(scriptDb);
+
+      let database;
+      // Se ejecuta cuando el script de la base de datos de Firebase ha cargado
+      scriptDb.onload = function () {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+        const projectsRef = database.ref('proyectos');
+        projectsRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          allProjects = data ? Object.values(data) : [];
+          const status = document.querySelector('.footer-offline');
+          if (status) {
+            status.innerHTML = "<span>📡</span> <span>Online</span>";
+            status.style.background = "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)";
+          }
+          render();
+        });
+      };
+
+      // Función para guardar en Firebase (si está conectado)
+      function saveToFirebase() {
+        if (!database) {
+          console.log('Firebase no está conectado. Guardando solo localmente.');
+          return;
+        }
+        
+        const data = {};
+        allProjects.forEach(project => {
+          data[project.id] = project;
+        });
+
+        database.ref('proyectos').set(data)
+          .then(() => showToast('Guardado en Firebase y localmente', 'success'))
+          .catch(err => {
+            console.error("Error al guardar en Firebase:", err);
+            showToast('Error al guardar en Firebase', 'error');
+          });
+        
+        // Ejemplo adicional para guardar otro dato
+        database.ref('users/saitama').set({ name: "Saitama", power: "Hero" })
+          .catch(err => console.error("Error al guardar usuario Saitama:", err));
+      }
+      
+      // ===================== FIN CONEXIÓN FIREBASE =====================
+
+      // ===================== ESTADO GLOBAL =====================
+      let currentView      = 'catalog';
+      let currentUser      = null;
+      let allProjects      = [];
+      let editingProjectId = null;
+
+      const TUTORES_DISPONIBLES = [
+        'Tutora Nubia González',
+        'Profesora Yajaira Bolwine',
+        'Profesor Gustavo Rodríguez'
+      ];
+
+      // ===================== USUARIOS Y PERMISOS =====================
+      // ── PERMISOS POR ROL ─────────────────────────────────────────
+      // Director    : upload, edit, delete, config, info
+      // Coordinador : upload, edit, info
+      // Profesor    : upload  (solo cargar)
+      // ─────────────────────────────────────────────────────────────
+      // NOTA: Configura tus usuarios y contraseñas aquí
+      const USERS = {
+        'director': {
+          password:    'ETRGC*Caracas#2026',
+          role:        'Director',
+          permissions: ['upload', 'edit', 'delete', 'config', 'info']
+        },
+        'coordinador': {
+          password:    'ETRGC2026',
+          role:        'Coordinador Academico',
+          permissions: ['upload', 'edit', 'info']
+        },
+        'profesor': {
+          password:    'Profe2026',
+          role:        'Profesor',
+          permissions: ['upload']
+        }
+      };
+
+      // Helpers de permisos
+      function can(permission) {
+        return currentUser && currentUser.permissions.includes(permission);
+      }
+      function roleLabel() {
+        if (!currentUser) return '';
+        const icons = { Director: '🔴', 'Coordinador Academico': '🟡', Profesor: '🟢' };
+        return (icons[currentUser.role] || '⚪') + ' ' + currentUser.role;
+      }
+
+      // ===================== UTILIDADES =====================
+      function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = type === 'success' ? 'toast toast-success' : 'toast toast-error';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+
+      function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(text || '').replace(/[&<>"']/g, m => map[m]);
+      }
+
+      function loadProjects() {
+        const stored = localStorage.getItem('etrgc_projects');
+        allProjects = stored ? JSON.parse(stored) : [];
+      }
+
+      function saveProjects() {
+        // Guardar en localStorage
+        localStorage.setItem('etrgc_projects', JSON.stringify(allProjects));
+        
+        // Si Firebase está conectado, también guarda allí.
+        // Si no, solo muestra el toast de guardado local.
+        if (database) {
+          saveToFirebase();
+        } else {
+          showToast('Guardado localmente', 'success');
+        }
+      }
+
+      function navigateTo(view) {
+        currentView = view;
+        // No resetear editingProjectId aquí; editProject lo asigna antes de llamar
+        // Solo se resetea si navegamos a otra sección que no sea 'upload'
+        if (view !== 'upload') editingProjectId = null;
+        render();
+        window.scrollTo(0, 0);
+      }
+
+      function logout() {
+        currentUser = null;
+        editingProjectId = null;
+        currentView = 'catalog';
+        showToast('Sesión cerrada', 'success');
+        render(); // render() detectará currentUser=null y mostrará el modal
+      }
+
+      // ===================== RENDER PRINCIPAL =====================
+      function render() {
+        if (!currentUser) {
+          showLoginModal();
+          return;
+        }
+        // Ocultar modal si existe
+        const modal = document.getElementById('login-modal');
+        if (modal) modal.remove();
+        renderNavigation();
+        renderContent();
+      }
+
+      function showLoginModal() {
+        // Ocultar nav y contenido mientras no haya sesión
+        const nav = document.getElementById('navigation');
+        if (nav) nav.innerHTML = '';
+        const content = document.getElementById('content');
+        if (content) content.innerHTML = '';
+
+        if (document.getElementById('login-modal')) return;
+
+        const modal = document.createElement('div');
+        modal.id = 'login-modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px)';
+        modal.innerHTML = `
+          <div style="width:100%;max-width:420px;margin:16px">
+            <div class="glass-effect" style="padding:40px 32px;border-left:4px solid #a78bfa">
+              <div style="text-align:center;margin-bottom:32px">
+                <div style="font-size:48px;margin-bottom:12px">🏛️</div>
+                <h2 style="color:#d8b4fe;margin-bottom:4px">REPOSITORIO DIGITAL</h2>
+                <p style="color:#9ca3af;font-size:13px">E.T.R. Gran Colombia — Acceso Restringido</p>
+              </div>
+              <div id="login-modal-error" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;padding:10px 14px;border-radius:8px;font-size:14px;margin-bottom:16px;text-align:center"></div>
+              <div class="form-group">
+                <label class="form-label">Usuario</label>
+                <input type="text" id="modal-user" autocomplete="username" placeholder="Ingresa tu usuario" onkeydown="if(event.key==='Enter')handleLoginModal()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" id="modal-pass" autocomplete="current-password" placeholder="Ingresa tu contraseña" onkeydown="if(event.key==='Enter')handleLoginModal()">
+              </div>
+              <button onclick="handleLoginModal()" class="btn-primary" style="width:100%;margin-top:8px;padding:14px;font-size:15px">
+                🔐 INICIAR SESIÓN
+              </button>
+              <div style="margin-top:24px;padding:16px;background:rgba(139,92,246,.1);border-radius:8px;font-size:12px;color:#9ca3af;line-height:1.8">
+                <span style="color:#d8b4fe;font-weight:bold">Niveles de acceso:</span><br>
+                🔴 Director &nbsp;·&nbsp; 🟡 Coordinador &nbsp;·&nbsp; 🟢 Profesor
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(modal);
+        setTimeout(() => document.getElementById('modal-user')?.focus(), 50);
+      }
+
+      function handleLoginModal() {
+        const user = (document.getElementById('modal-user')?.value || '').trim();
+        const pass =  document.getElementById('modal-pass')?.value || '';
+        const errorBox = document.getElementById('login-modal-error');
+
+        if (!user || !pass) {
+          errorBox.style.display = 'block';
+          errorBox.textContent = '⚠️ Completa usuario y contraseña';
+          return;
+        }
+
+        if (USERS[user] && USERS[user].password === pass) {
+          currentUser = { username: user, role: USERS[user].role, permissions: USERS[user].permissions };
+          const modal = document.getElementById('login-modal');
+          if (modal) modal.remove();
+          showToast('Bienvenido, ' + roleLabel(), 'success');
+          // Redirigir según rol
+          currentView = 'catalog';
+          render();
+        } else {
+          errorBox.style.display = 'block';
+          errorBox.textContent = '❌ Usuario o contraseña incorrectos';
+          document.getElementById('modal-pass').value = '';
+          document.getElementById('modal-pass').focus();
+        }
+      }
+
+      function renderNavigation() {
+        const nav = document.getElementById('navigation');
+
+        // CATÁLOGO: siempre visible
+        let html = '<button onclick="navigateTo(\'catalog\')" class="nav-inactive" id="nav-catalog">📚 CATÁLOGO</button>';
+
+        // CARGAR: visible para todos (login requerido dentro)
+        html += '<button onclick="navigateTo(\'upload\')"  class="nav-inactive" id="nav-upload">⬆️ CARGAR</button>';
+
+        // CONFIG: solo Director (o sin sesión para login)
+        if (!currentUser || can('config')) {
+          html += '<button onclick="navigateTo(\'config\')"  class="nav-inactive" id="nav-config">⚙️ CONFIG</button>';
+        }
+
+        // INFO: Director y Coordinador (o sin sesión para login)
+        if (!currentUser || can('info')) {
+          html += '<button onclick="navigateTo(\'info\')"    class="nav-inactive" id="nav-info">ℹ️ INFO</button>';
+        }
+
+        if (currentUser) {
+          html += '<button onclick="logout()" style="margin-left:auto;background:rgba(220,38,38,0.5);font-size:13px">'
+                + roleLabel() + ' &nbsp;|&nbsp; ' + escapeHtml(currentUser.username) + ' &nbsp;|&nbsp; Salir</button>';
+        }
+
+        nav.innerHTML = html;
+        const activeBtn = document.getElementById('nav-' + currentView);
+        if (activeBtn) { activeBtn.classList.add('nav-active'); activeBtn.classList.remove('nav-inactive'); }
+      }
+
+      function renderContent() {
+        const content = document.getElementById('content');
+        if (currentView === 'catalog') {
+          content.innerHTML = renderCatalog();
+        } else if (currentView === 'upload') {
+          if (!currentUser)           content.innerHTML = renderLoginUpload();
+          else if (!can('upload'))    content.innerHTML = renderAccessDenied('CARGAR', 'No tienes permiso para cargar proyectos.');
+          else                        content.innerHTML = renderUpload();
+        } else if (currentView === 'config') {
+          if (!currentUser)           content.innerHTML = renderLoginConfig();
+          else if (!can('config'))    content.innerHTML = renderAccessDenied('CONFIG', 'Solo el Director puede acceder a la configuracion.');
+          else                        content.innerHTML = renderConfig();
+        } else if (currentView === 'info') {
+          if (currentUser && !can('info')) content.innerHTML = renderAccessDenied('INFO', 'Tu rol no tiene acceso a esta seccion.');
+          else                             content.innerHTML = renderInfo();
+        }
+      }
+
+      function renderAccessDenied(section, message) {
+        return '<div style="max-width:480px;margin:60px auto">'          + '<div class="glass-effect" style="text-align:center;padding:48px 32px;border-left:4px solid #ef4444">'          + '<div style="font-size:64px;margin-bottom:16px">\u{1F6AB}</div>'          + '<h2 style="color:#f87171;margin-bottom:12px">Acceso Denegado</h2>'          + '<p style="color:#d1d5db;margin-bottom:8px"><strong style="color:#fca5a5">\u26A0\uFE0F ' + section + '</strong></p>'          + '<p style="color:#9ca3af;font-size:14px;margin-bottom:24px">' + message + '</p>'          + '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:12px 16px;border-radius:8px;font-size:13px;color:#fca5a5;margin-bottom:24px">'          + '\uD83D\uDD11 Rol actual: <strong>' + roleLabel() + '</strong></div>'          + '<button onclick="navigateTo(\'catalog\')" class="btn-primary">\u2190 Volver al Cat\u00E1logo</button>'          + '</div></div>';
+      }
+
+      // ===================== CATÁLOGO =====================
+      function renderCatalog() {
+        const digitalApproved  = allProjects.filter(p => p.physicalStatus === 'digital'   && p.status === 'approved').length;
+        const digitalPending   = allProjects.filter(p => p.physicalStatus === 'digital'   && p.status === 'pending').length;
+        const physicalApproved = allProjects.filter(p => p.physicalStatus === 'physical'  && p.status === 'approved').length;
+        const physicalPending  = allProjects.filter(p => p.physicalStatus === 'physical'  && p.status === 'pending').length;
+        const total            = allProjects.length;
+
+        let html = '<div>';
+        html += '<h2>📚 CATÁLOGO DE PROYECTOS</h2>';
+
+        html += '<div class="stats-container">';
+        html += '<div class="mega-stat-card"><div class="mega-stat-number">' + total + '</div><div class="mega-stat-label">PROYECTOS TOTALES</div></div>';
+        html += '<div class="stat-group"><div class="stat-group-title">Sitio Digital</div><div class="stat-row">';
+        html += '<div class="mini-stat" style="border-left:4px solid #10b981"><div class="mini-stat-number">' + digitalApproved  + '</div><div class="mini-stat-label">Aprobados</div></div>';
+        html += '<div class="mini-stat" style="border-left:4px solid #f59e0b"><div class="mini-stat-number">' + digitalPending   + '</div><div class="mini-stat-label">En Revisión</div></div>';
+        html += '</div></div>';
+        html += '<div class="stat-group"><div class="stat-group-title">Sitio Físico</div><div class="stat-row">';
+        html += '<div class="mini-stat" style="border-left:4px solid #10b981"><div class="mini-stat-number">' + physicalApproved + '</div><div class="mini-stat-label">Aprobados</div></div>';
+        html += '<div class="mini-stat" style="border-left:4px solid #f59e0b"><div class="mini-stat-number">' + physicalPending  + '</div><div class="mini-stat-label">En Revisión</div></div>';
+        html += '</div></div></div>';
+
+        html += '<div class="glass-effect filter-section">';
+        html += '<h3 style="margin-bottom:20px">🔍 Buscar Proyectos</h3>';
+        html += '<div class="form-row"><div class="form-group"><label class="form-label">Título o Autor</label><input type="text" id="search-input" placeholder="Escribe aquí..." onkeyup="applyFilters()"></div></div>';
+        html += '<div class="form-row">';
+        html += '<div class="form-group"><label class="form-label">Año</label><select id="year-filter" onchange="applyFilters()"><option value="">Todos</option>';
+        for (let y = 2011; y <= 2026; y++) html += '<option value="' + y + '">' + y + '</option>';
+        html += '</select></div>';
+        html += '<div class="form-group"><label class="form-label">Nivel Académico</label><select id="level-filter" onchange="applyFilters()"><option value="">Todos</option><option value="4to">Cuarto Año</option><option value="5to">Quinto Año</option><option value="6to">Sexto Año</option></select></div>';
+        html += '<div class="form-group"><label class="form-label">Mención</label><select id="mention-filter" onchange="applyFilters()"><option value="">Todos</option><option value="Administración">Administración</option><option value="Comercio">Comercio</option><option value="Telemática">Telemática</option><option value="Construcción Civil">Construcción Civil</option></select></div>';
+        html += '</div>';
+        html += '<div class="form-row">';
+        html += '<div class="form-group"><label class="form-label">Tipo de Sitio</label><select id="type-filter" onchange="applyFilters()"><option value="">Todos</option><option value="digital">Digital</option><option value="physical">Físico</option></select></div>';
+        html += '<div class="form-group"><label class="form-label">Tutor/a Responsable</label><select id="tutor-filter" onchange="applyFilters()"><option value="">Todos</option>';
+        TUTORES_DISPONIBLES.forEach(t => { html += '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>'; });
+        html += '</select></div>';
+        html += '<div class="form-group"><label class="form-label">Palabras Clave</label><input type="text" id="keywords-filter" placeholder="IoT, Arduino..." onkeyup="applyFilters()"></div>';
+        html += '</div></div>';
+
+        html += '<div id="projects-list">';
+        html += allProjects.length === 0
+          ? '<div class="glass-effect text-center"><p style="color:#d8b4fe;font-size:18px;padding:40px">No hay proyectos aún</p></div>'
+          : renderCategorizedProjects(allProjects);
+        html += '</div></div>';
+
+        return html;
+      }
+
+      function renderCategorizedProjects(projects) {
+        const da = projects.filter(p => p.physicalStatus === 'digital'  && p.status === 'approved');
+        const dp = projects.filter(p => p.physicalStatus === 'digital'  && p.status === 'pending');
+        const pa = projects.filter(p => p.physicalStatus === 'physical' && p.status === 'approved');
+        const pp = projects.filter(p => p.physicalStatus === 'physical' && p.status === 'pending');
+
+        let html = '';
+        if (da.length) html += renderCategory('✅ Sitio Digital Aprobados',  '#10b981', '#059669', da);
+        if (dp.length) html += renderCategory('⏳ Sitio Digital en Revisión', '#f59e0b', '#d97706', dp);
+        if (pa.length) html += renderCategory('✅ Sitio Físico Aprobados',   '#10b981', '#059669', pa);
+        if (pp.length) html += renderCategory('⏳ Sitio Físico en Revisión',  '#f59e0b', '#d97706', pp);
+        return html;
+      }
+
+      function renderCategory(label, from, to, items) {
+        let html = '<div class="category-section">';
+        html += '<div class="category-header" style="background:linear-gradient(135deg,' + from + ' 0%,' + to + ' 100%)">';
+        html += '<h3>' + label + '</h3><span class="category-count">' + items.length + '</span></div>';
+        html += '<div class="projects-grid">';
+        items.forEach(p => { html += renderProjectCard(p); });
+        html += '</div></div>';
+        return html;
+      }
+
+      function renderProjectCard(project) {
+        const statusText  = project.status === 'approved' ? '✅ APROBADO' : '⏳ EN REVISIÓN';
+        const borderColor = project.status === 'approved' ? '4px solid #10b981' : '4px solid #f59e0b';
+        const siteType    = project.physicalStatus === 'digital' ? '💻 Digital' : '📦 Físico';
+
+        return '<div class="project-card" style="border-left:' + borderColor + '" onclick="showProjectDetails(\'' + escapeHtml(project.id) + '\')">'
+          + '<div class="project-title">' + escapeHtml(project.title) + '</div>'
+          + '<span class="status-badge">' + statusText + '</span>'
+          + '<div class="project-meta" style="margin-top:16px;gap:8px;grid-template-columns:1fr 1fr">'
+          + metaItem('📝 Autor',  project.author)
+          + metaItem('📅 Año',    project.year)
+          + metaItem('🎓 Nivel',  project.studentYear || 'N/A')
+          + metaItem('👨‍🏫 Tutor', project.tutor.split(' ')[1] || 'N/A')
+          + '</div>'
+          + '<div style="margin-top:16px;padding:12px;background:rgba(59,130,246,.1);border-radius:8px;border-left:3px solid #3b82f6"><span class="project-meta-label">🌐 Tipo</span><br><span style="font-size:14px;color:#93c5fd">' + siteType + '</span></div>'
+          + '<p style="color:#d1d5db;font-size:13px;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)">→ Haz clic para ver detalles completos</p>'
+          + '</div>';
+      }
+
+      function metaItem(label, value) {
+        return '<div class="project-meta-item" style="background:rgba(139,92,246,.2);padding:12px;border-radius:8px;border-left:3px solid #a78bfa">'
+          + '<span class="project-meta-label">' + label + '</span><br>'
+          + '<span style="font-size:14px;color:#e0e7ff">' + escapeHtml(value) + '</span></div>';
+      }
+
+      function showProjectDetails(projectId) {
+        const project = allProjects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const siteType = project.physicalStatus === 'digital' ? '💻 Sitio Digital' : '📦 Sitio Físico';
+
+        let html = '<div class="modal-backdrop" onclick="closeModal(event)"><div class="modal-content" onclick="event.stopPropagation()">';
+        html += '<div class="modal-header"><div><h2 style="margin-bottom:8px">' + escapeHtml(project.title) + '</h2>';
+        html += '<span class="status-badge">' + (project.status === 'approved' ? '✅ APROBADO' : '⏳ EN REVISIÓN') + '</span></div>';
+        html += '<button class="close-btn" onclick="closeModal()">✕</button></div>';
+
+        html += '<div class="glass-effect" style="background:rgba(139,92,246,.1);border-left:4px solid #a78bfa"><h3 style="color:#c4b5fd">📋 INFORMACIÓN DEL PROYECTO</h3><div class="form-row" style="margin-top:16px">';
+        html += detailBox('📝 Autor',            project.author);
+        html += detailBox('📅 Año',              project.year);
+        html += detailBox('🎓 Nivel Académico',  project.studentYear || 'N/A');
+        html += detailBox('👨‍🏫 Tutor Responsable', project.tutor);
+        if (project.mention) html += detailBox('🏅 Mención', project.mention);
+        html += '<div style="background:rgba(59,130,246,.1);padding:12px;border-radius:8px;border-left:3px solid #3b82f6"><strong style="color:#93c5fd">🌐 Tipo de Sitio</strong><br><span style="color:#bfdbfe">' + siteType + '</span></div>';
+        html += '</div></div>';
+
+        html += section('#6ee7b7', '6ee7b7', '🎯 OBJETIVO GENERAL', '<p style="color:#d1d5db;line-height:1.6;margin-top:12px">' + escapeHtml(project.objective) + '</p>');
+
+        if (project.projectIndex)
+          html += section('#fb923c', 'fb923c', '📑 ÍNDICE DEL PROYECTO', '<p style="color:#d1d5db;white-space:pre-wrap;line-height:1.6;margin-top:12px;font-size:14px">' + escapeHtml(project.projectIndex) + '</p>');
+
+        if (project.fullDescription)
+          html += section('#ec4899', 'ec4899', '📖 DESCRIPCIÓN COMPLETA', '<p style="color:#d1d5db;white-space:pre-wrap;line-height:1.6;margin-top:12px;font-size:14px">' + escapeHtml(project.fullDescription) + '</p>');
+
+        html += section('#a855f7', 'a855f7', '🏷️ PALABRAS CLAVE', '<p style="color:#d1d5db;margin-top:12px;font-size:14px">' + escapeHtml(project.keywords) + '</p>');
+
+        if (project.pdfUrl)
+          html += '<div class="glass-effect"><a href="' + escapeHtml(project.pdfUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:block;text-align:center;text-decoration:none">📥 DESCARGAR ARCHIVO PDF</a></div>';
+
+        if (project.googleDriveUrl)
+          html += '<div class="glass-effect"><a href="' + escapeHtml(project.googleDriveUrl) + '" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:block;text-align:center;text-decoration:none">📁 ACCEDER A GOOGLE DRIVE</a></div>';
+
+        // Botones de accion segun permisos del rol
+        const hasEdit   = can('edit');
+        const hasDelete = can('delete');
+        if (hasEdit || hasDelete) {
+          html += '<div class="flex mt-4">';
+          if (hasEdit)   html += '<button onclick="editProject(\'' + projectId + '\')" class="btn-primary flex-1">✏️ EDITAR</button>';
+          if (hasDelete) html += '<button onclick="deleteProject(\'' + projectId + '\')" class="btn-secondary flex-1">🗑️ ELIMINAR</button>';
+          html += '</div>';
+        }
+
+        html += '</div></div>';
+        document.body.insertAdjacentHTML('beforeend', html);
+      }
+
+      function detailBox(label, value) {
+        return '<div style="background:rgba(255,255,255,.05);padding:12px;border-radius:8px"><strong style="color:#d8b4fe">' + label + '</strong><br><span style="color:#e0e7ff">' + escapeHtml(value) + '</span></div>';
+      }
+
+      function section(color, hex, title, body) {
+        return '<div class="glass-effect" style="background:rgba(' + hexToRgb(hex) + ',.1);border-left:4px solid ' + color + '"><h3 style="color:' + color + '">' + title + '</h3>' + body + '</div>';
+      }
+
+      function hexToRgb(hex) {
+        const r = parseInt(hex.slice(0,2),16);
+        const g = parseInt(hex.slice(2,4),16);
+        const b = parseInt(hex.slice(4,6),16);
+        return r + ',' + g + ',' + b;
+      }
+
+      function closeModal(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.querySelector('.modal-backdrop')?.remove();
+      }
+
+      function applyFilters() {
+        const search   = (document.getElementById('search-input')?.value    || '').toLowerCase();
+        const year     =  document.getElementById('year-filter')?.value     || '';
+        const tutor    =  document.getElementById('tutor-filter')?.value    || '';
+        const level    =  document.getElementById('level-filter')?.value    || '';
+        const type     =  document.getElementById('type-filter')?.value     || '';
+        const mention  =  document.getElementById('mention-filter')?.value  || '';
+        const keywords = (document.getElementById('keywords-filter')?.value || '').toLowerCase();
+
+        const filtered = allProjects.filter(p => {
+          const matchSearch   = !search   || (p.title  || '').toLowerCase().includes(search) || (p.author || '').toLowerCase().includes(search);
+          const matchYear     = !year     || String(p.year          || '') === year;
+          const matchTutor    = !tutor    || String(p.tutor         || '') === tutor;
+          const matchLevel    = !level    || String(p.studentYear   || '') === level;
+          const matchType     = !type     || String(p.physicalStatus|| '') === type;
+          const matchMention  = !mention  || String(p.mention       || '') === mention;
+          const matchKeywords = !keywords || (p.keywords || '').toLowerCase().includes(keywords);
+          return matchSearch && matchYear && matchTutor && matchLevel && matchType && matchMention && matchKeywords;
+        });
+
+        const list = document.getElementById('projects-list');
+        if (list) {
+          list.innerHTML = filtered.length === 0
+            ? '<div class="glass-effect text-center"><p style="color:#d8b4fe;font-size:18px;padding:40px">📭 Sin resultados para tu búsqueda</p></div>'
+            : renderCategorizedProjects(filtered);
+        }
+      }
+
+      // ===================== UPLOAD =====================
+      function renderLoginUpload() {
+        return '<div style="max-width:448px;margin:0 auto"><div class="glass-effect"><h2>Acceso Restringido</h2><form onsubmit="handleLoginUpload(event)"><div class="form-group"><label class="form-label">Usuario</label><input type="text" id="login-user" required></div><div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="login-pass" required></div><button type="submit" class="btn-primary" style="width:100%">INICIAR SESIÓN</button></form></div></div>';
+      }
+
+      function handleLoginUpload(e) {
+        e.preventDefault();
+        const user = document.getElementById('login-user').value;
+        const pass = document.getElementById('login-pass').value;
+        if (USERS[user] && USERS[user].password === pass) {
+          currentUser = { username: user, role: USERS[user].role, permissions: USERS[user].permissions };
+          showToast('Bienvenido, ' + roleLabel(), 'success');
+          navigateTo('upload');
+        } else {
+          showToast('Credenciales inválidas', 'error');
+        }
+      }
+
+      function renderUpload() {
+        const isEditing = editingProjectId !== null;
+        const tutorOptions = TUTORES_DISPONIBLES.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
+        const yearOptions  = Array.from({length: 16}, (_, i) => 2011 + i).map(y => '<option value="' + y + '">' + y + '</option>').join('');
+
+        return '<div style="max-width:896px;margin:0 auto"><h2>' + (isEditing ? '✏️ EDITAR PROYECTO' : '➕ CARGAR NUEVO PROYECTO') + '</h2>'
+          + '<div class="glass-effect"><form onsubmit="handleUpload(event)">'
+          + '<div class="form-row">'
+          + '<div class="form-group"><label class="form-label">Título del Proyecto</label><input type="text" id="title" required></div>'
+          + '<div class="form-group"><label class="form-label">Autor/a</label><input type="text" id="author" required></div>'
+          + '</div>'
+          + '<div class="form-row">'
+          + '<div class="form-group"><label class="form-label">Año</label><select id="year" required><option value="">Seleccione</option>' + yearOptions + '</select></div>'
+          + '<div class="form-group"><label class="form-label">Nivel Académico</label><select id="studentYear" required><option value="">Seleccione</option><option value="4to">Cuarto Año</option><option value="5to">Quinto Año</option><option value="6to">Sexto Año</option></select></div>'
+          + '</div>'
+          + '<div class="form-group"><label class="form-label">Mención</label><select id="mention" required><option value="">Seleccione</option><option value="Administración">Administración</option><option value="Comercio">Comercio</option><option value="Telemática">Telemática</option><option value="Construcción Civil">Construcción Civil</option></select></div>'
+          + '<div class="form-group"><label class="form-label">Tutor/a Responsable</label><select id="tutor" required><option value="">Seleccione</option>' + tutorOptions + '</select></div>'
+          + '<div class="form-group"><label class="form-label">Tipo de Sitio</label><select id="physicalStatus" required onchange="toggleGoogleDriveField()"><option value="">Seleccione</option><option value="digital">Digital</option><option value="physical">Físico</option></select></div>'
+          + (can('edit') ?              '<div class="form-group"><label class="form-label">Estado de Aprobación</label><select id="status" required><option value="approved">Aprobado</option><option value="pending">En Revisión</option></select></div>'            : '<div class="form-group"><label class="form-label">Estado de Aprobación</label><select id="status" required><option value="pending">En Revisión</option></select></div><p style="color:#9ca3af;font-size:12px;margin-top:4px">⚠️ Los proyectos cargados por Profesores quedan En Revisión hasta que sean aprobados.</p>')
+          + '<div class="form-group"><label class="form-label">Índice del Proyecto</label><textarea id="projectIndex" required placeholder="Estructura y contenido principal del proyecto..."></textarea></div>'
+          + '<div class="form-group"><label class="form-label">Objetivo General</label><textarea id="objective" required placeholder="Objetivo principal del proyecto..."></textarea></div>'
+          + '<div class="form-group"><label class="form-label">Palabras Clave</label><input type="text" id="keywords" required placeholder="Ejemplo: IoT, Arduino, Sostenibilidad..."></div>'
+          + '<div id="googleDriveContainer" class="form-group" style="display:none"><label class="form-label">📁 Enlace de Google Drive (Solo para proyectos digitales)</label><input type="text" id="googleDriveUrl" placeholder="https://drive.google.com/drive/folders/..."></div>'
+          + '<div class="form-group"><label class="form-label">Descripción Completa</label><textarea id="fullDescription" placeholder="Descripción detallada del proyecto..."></textarea></div>'
+          + '<div class="form-group"><label class="form-label">Enlace PDF (Opcional)</label><input type="text" id="pdfUrl" placeholder="https://ejemplo.com/archivo.pdf"></div>'
+          + '<div class="flex mt-4">'
+          + '<button type="submit" class="btn-primary flex-1">' + (isEditing ? '💾 ACTUALIZAR' : '✅ GUARDAR') + '</button>'
+          + '<button type="button" onclick="navigateTo(\'catalog\')" class="btn-secondary flex-1">❌ CANCELAR</button>'
+          + '</div></form></div></div>';
+      }
+
+      function handleUpload(e) {
+        e.preventDefault();
+        const isEditing = editingProjectId !== null;
+
+        const projectData = {
+          title:          document.getElementById('title').value,
+          author:         document.getElementById('author').value,
+          year:           document.getElementById('year').value,
+          studentYear:    document.getElementById('studentYear').value,
+          mention:        document.getElementById('mention').value,
+          tutor:          document.getElementById('tutor').value,
+          projectIndex:   document.getElementById('projectIndex').value,
+          objective:      document.getElementById('objective').value,
+          keywords:       document.getElementById('keywords').value,
+          physicalStatus: document.getElementById('physicalStatus').value,
+          fullDescription:document.getElementById('fullDescription').value,
+          pdfUrl:         document.getElementById('pdfUrl').value,
+          status:         document.getElementById('status').value,
+          googleDriveUrl: document.getElementById('googleDriveUrl')?.value || '',
+          updatedAt:      new Date().toISOString()
+        };
+
+        if (isEditing) {
+          const idx = allProjects.findIndex(p => p.id === editingProjectId);
+          if (idx !== -1) {
+            projectData.id        = allProjects[idx].id;
+            projectData.createdAt = allProjects[idx].createdAt;
+            allProjects[idx]      = projectData;
+          }
+        } else {
+          projectData.id        = Date.now().toString();
+          projectData.createdAt = new Date().toISOString();
+          allProjects.push(projectData);
+        }
+
+        saveProjects();
+        editingProjectId = null;
+        showToast(isEditing ? 'Proyecto actualizado correctamente ✅' : 'Proyecto guardado correctamente ✅', 'success');
+        navigateTo('catalog');
+      }
+
+      function editProject(id) {
+        const project = allProjects.find(p => p.id === id);
+        if (!project) return;
+        // Asignar ANTES de navigateTo para que renderUpload lo vea
+        editingProjectId = id;
+        closeModal();
+        navigateTo('upload');
+        // Poblar el formulario después de que el DOM haya renderizado
+        setTimeout(() => {
+          document.getElementById('title').value           = project.title        || '';
+          document.getElementById('author').value          = project.author       || '';
+          document.getElementById('year').value            = project.year         || '';
+          document.getElementById('studentYear').value     = project.studentYear  || '';
+          document.getElementById('mention').value         = project.mention      || '';
+          document.getElementById('tutor').value           = project.tutor        || '';
+          document.getElementById('projectIndex').value    = project.projectIndex || '';
+          document.getElementById('objective').value       = project.objective    || '';
+          document.getElementById('keywords').value        = project.keywords     || '';
+          document.getElementById('physicalStatus').value  = project.physicalStatus || '';
+          document.getElementById('fullDescription').value = project.fullDescription || '';
+          document.getElementById('pdfUrl').value          = project.pdfUrl       || '';
+          document.getElementById('status').value          = project.status       || 'pending';
+          document.getElementById('googleDriveUrl').value  = project.googleDriveUrl || '';
+          toggleGoogleDriveField();
+        }, 50);
+      }
+
+      function toggleGoogleDriveField() {
+        const val       = document.getElementById('physicalStatus')?.value;
+        const container = document.getElementById('googleDriveContainer');
+        if (container) container.style.display = val === 'digital' ? 'block' : 'none';
+      }
+
+      function deleteProject(id) {
+        if (!confirm('¿Eliminar este proyecto?')) return;
+        allProjects = allProjects.filter(p => p.id !== id);
+        saveProjects();
+        closeModal();
+        showToast('Proyecto eliminado', 'success');
+        render();
+      }
+
+      // ===================== CONFIG =====================
+      function renderLoginConfig() {
+        return '<div style="max-width:448px;margin:0 auto"><div class="glass-effect"><h2>Acceso Restringido</h2><form onsubmit="handleLoginConfig(event)"><div class="form-group"><label class="form-label">Usuario</label><input type="text" id="login-user-config" required></div><div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="login-pass-config" required></div><button type="submit" class="btn-primary" style="width:100%">INICIAR SESIÓN</button></form></div></div>';
+      }
+
+      function handleLoginConfig(e) {
+        e.preventDefault();
+        const user = document.getElementById('login-user-config').value;
+        const pass = document.getElementById('login-pass-config').value;
+        if (USERS[user] && USERS[user].password === pass) {
+          currentUser = { username: user, role: USERS[user].role, permissions: USERS[user].permissions };
+          showToast('Bienvenido, ' + roleLabel(), 'success');
+          // Solo redirigir a config si tiene permiso; si no, ir al catálogo
+          if (USERS[user].permissions.includes('config')) {
+            navigateTo('config');
+          } else {
+            showToast('Tu rol no tiene acceso a Configuración', 'error');
+            navigateTo('catalog');
+          }
+        } else {
+          showToast('Credenciales inválidas', 'error');
+        }
+      }
+
+      function renderConfig() {
+        const total            = allProjects.length;
+        const approved         = allProjects.filter(p => p.status === 'approved').length;
+        const pending          = allProjects.filter(p => p.status === 'pending').length;
+        const digitalApproved  = allProjects.filter(p => p.physicalStatus === 'digital'  && p.status === 'approved').length;
+        const digitalPending   = allProjects.filter(p => p.physicalStatus === 'digital'  && p.status === 'pending').length;
+        const physicalApproved = allProjects.filter(p => p.physicalStatus === 'physical' && p.status === 'approved').length;
+        const physicalPending  = allProjects.filter(p => p.physicalStatus === 'physical' && p.status === 'pending').length;
+
+        let html = '<div style="max-width:896px;margin:0 auto"><h2>⚙️ CONFIGURACIÓN DEL REPOSITORIO</h2>';
+
+        html += '<div class="glass-effect"><h3>📖 INSTRUCCIONES DE ACCESO</h3><p style="color:#d1d5db;line-height:1.8">'
+          + '<strong style="color:#d8b4fe">Tres Niveles de Acceso:</strong><br>'
+          + '<strong style="color:#60a5fa">🔴 Director:</strong> Acceso total a todas las funciones<br>'
+          + '<strong style="color:#f59e0b">🟡 Coordinador:</strong> Crear, editar y aprobar proyectos<br>'
+          + '<strong style="color:#10b981">🟢 Profesor:</strong> Crear y editar sus propios proyectos</p></div>';
+
+        html += '<div class="glass-effect"><h3>📊 ESTADÍSTICAS GENERALES DE PROYECTOS</h3><div class="form-row">';
+        html += statBox('#3b82f6', '3b82f6', '#93c5fd', total,    'Proyectos Totales');
+        html += statBox('#6ee7b7', '6ee7b7', '#6ee7b7', approved,  'Total Aprobados');
+        html += statBox('#fb923c', 'fb923c', '#fb923c', pending,   'En Revisión');
+        html += '</div>';
+
+        html += '<div style="margin-top:24px"><h3 style="color:#d8b4fe;margin-bottom:16px">💻 Desglose por Tipo</h3><div class="form-row">';
+        html += typeBlock('🌐 Sitios Digitales',  digitalApproved,  digitalPending);
+        html += typeBlock('📦 Sitios Físicos',    physicalApproved, physicalPending);
+        html += '</div></div></div>';
+
+        html += '<div class="glass-effect"><h3>💾 GESTIÓN DE DATOS</h3>'
+          + '<p style="color:#d1d5db;margin-bottom:8px">Los proyectos se guardan automáticamente en tu navegador (localStorage).</p>'
+          + '<p style="color:#93c5fd;font-size:14px;margin-bottom:16px">Para compartir datos entre navegadores, exporta el archivo JSON y luego impórtalo en el otro navegador.</p>'
+          + '<div class="flex" style="margin-bottom:16px">'
+          + '<button onclick="exportProjects()" class="btn-primary flex-1">📥 DESCARGAR ARCHIVO JSON</button>'
+          + '<button onclick="importProjects()" class="btn-primary flex-1">📤 IMPORTAR DESDE ARCHIVO JSON</button>'
+          + '</div>'
+          + '<div style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);padding:12px 16px;border-radius:8px;font-size:14px;color:#93c5fd">'
+          + '💾 ' + total + ' proyectos guardados &nbsp;|&nbsp; ✅ ' + approved + ' aprobados &nbsp;|&nbsp; ⏳ ' + pending + ' en revisión'
+          + '</div>'
+          + '</div></div>';
+
+        return html;
+      }
+
+      function statBox(borderColor, hex, textColor, num, label) {
+        return '<div style="background:rgba(' + hexToRgb(hex) + ',.1);padding:20px;border-radius:8px;border-left:3px solid ' + borderColor + ';text-align:center">'
+          + '<div style="font-size:36px;font-weight:bold;color:' + textColor + '">' + num + '</div>'
+          + '<div style="color:#d1d5db;font-size:14px;margin-top:12px">' + label + '</div></div>';
+      }
+
+      function typeBlock(label, approved, pending) {
+        return '<div style="background:rgba(139,92,246,.15);padding:16px;border-radius:8px;border-left:4px solid #a78bfa">'
+          + '<div style="color:#d1d5db;margin-bottom:12px;font-weight:bold">' + label + '</div>'
+          + '<div style="background:rgba(16,185,129,.2);padding:12px;border-radius:6px;margin-bottom:8px"><span style="color:#6ee7b7;font-size:24px;font-weight:bold">' + approved + '</span><span style="color:#d1d5db;margin-left:12px">✅ Aprobados</span></div>'
+          + '<div style="background:rgba(251,146,60,.2);padding:12px;border-radius:6px"><span style="color:#fb923c;font-size:24px;font-weight:bold">' + pending + '</span><span style="color:#d1d5db;margin-left:12px">⏳ En Revisión</span></div>'
+          + '</div>';
+      }
+
+      function exportProjects() {
+        if (allProjects.length === 0) {
+          showToast('⚠️ No hay proyectos para exportar', 'error');
+          return;
+        }
+        try {
+          const data  = JSON.stringify(allProjects, null, 2);
+          const blob  = new Blob([data], { type: 'application/json' });
+          const url   = URL.createObjectURL(blob);
+          const fecha = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          const a     = Object.assign(document.createElement('a'), { href: url, download: 'repositorio_etrgc_' + fecha + '.json' });
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast('✅ Exportados ' + allProjects.length + ' proyectos', 'success');
+        } catch (e) {
+          console.error('Error exportando:', e);
+          showToast('❌ Error al exportar', 'error');
+        }
+      }
+
+      function importProjects() {
+        const input  = document.createElement('input');
+        input.type   = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader  = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const parsed = JSON.parse(ev.target.result);
+
+              // Acepta tanto un array directo como el formato de copia de seguridad
+              // { fecha_creacion, total_proyectos, proyectos: [...] }
+              let imported;
+              if (Array.isArray(parsed)) {
+                imported = parsed;
+              } else if (parsed && Array.isArray(parsed.proyectos)) {
+                imported = parsed.proyectos;
+              } else {
+                throw new Error('Formato de archivo no reconocido');
+              }
+
+              const validProjects = imported.filter(p => p.title && p.author && p.year);
+              if (validProjects.length === 0) {
+                throw new Error('No hay proyectos válidos en el archivo');
+              }
+              if (confirm('¿Reemplazar los ' + allProjects.length + ' proyectos actuales con ' + validProjects.length + ' proyectos importados?')) {
+                allProjects = validProjects;
+                saveProjects();
+                render();
+                showToast('✅ Importados ' + validProjects.length + ' proyectos', 'success');
+              }
+            } catch (err) {
+              console.error('Error:', err);
+              showToast('❌ Error al importar: ' + err.message, 'error');
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+
+      // ===================== INFO =====================
+      function renderInfo() {
+        return '<div style="max-width:896px;margin:0 auto"><h2>ℹ️ INFORMACIÓN</h2>'
+          + '<div class="glass-effect"><h3>ESCUELA TÉCNICA ROBINSONIANA</h3><p style="color:#d1d5db;line-height:1.8"><strong style="color:#f87171">Complejo Educativo "Gran Colombia"</strong><br>Honrando la memoria de Antonio José de Sucre<br><br>Formando profesionales técnicos de excelencia desde 1983.</p></div>'
+          + '<div class="glass-effect"><h3>SOBRE ESTE REPOSITORIO</h3><p style="color:#d1d5db;line-height:1.8">Plataforma digital para catalogar y gestionar proyectos socio-productivos de estudiantes y profesores. Sistema offline (sin conexión a internet).</p></div>'
+          + '<div class="glass-effect"><h3>COORDINACIÓN</h3><div style="background:rgba(220,38,38,.2);border-left:4px solid #dc2626;padding:16px;border-radius:8px"><p style="color:#f87171;font-size:18px;font-weight:bold">Tutora Nubia González</p><p style="color:#d1d5db;margin-top:8px">Coordinadora del Programa de Proyectos Socio-Productivos de la E.T.R. G.C</p></div></div>'
+          + '<div class="glass-effect"><h3>PERÍODO DE OPERACIÓN</h3><p style="color:#d1d5db;line-height:1.8">Años de operación: <strong style="color:#60a5fa">A partir de 2026</strong></p></div>'
+          + '<div class="glass-effect"><h3>CARACTERÍSTICAS</h3><div style="color:#d1d5db;line-height:1.8"><p>✓ Funciona sin conexión a internet</p><p>✓ Gestión completa de proyectos</p><p>✓ Sistema de filtros avanzados</p><p>✓ Exportación de datos</p><p>✓ Control de acceso con 3 niveles</p></div></div>'
+          + '<div class="glass-effect"><h3>NIVELES DE ACCESO</h3><div style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);padding:16px;border-radius:8px"><p style="color:#d8b4fe;font-weight:bold">🔴 Director - Acceso Total</p><p style="color:#d1d5db;margin-bottom:16px">Crear, editar, eliminar y aprobar proyectos</p><p style="color:#d8b4fe;font-weight:bold">🟡 Coordinador - Acceso Moderador</p><p style="color:#d1d5db;margin-bottom:16px">Crear, editar y aprobar proyectos</p><p style="color:#d8b4fe;font-weight:bold">🟢 Profesor - Acceso Limitado</p><p style="color:#d1d5db">Crear y editar sus propios proyectos</p></div></div>'
+          + '<div class="glass-effect"><h3>MENCIONES DISPONIBLES</h3><div style="color:#d1d5db;line-height:2"><p>📌 <strong style="color:#d8b4fe">Administración</strong></p><p>📌 <strong style="color:#d8b4fe">Comercio</strong></p><p>📌 <strong style="color:#d8b4fe">Telemática</strong></p><p>📌 <strong style="color:#d8b4fe">Construcción Civil</strong></p></div></div>'
+          + '</div>';
+      }
+
+      // ===================== INICIALIZACIÓN =====================
+      loadProjects();
+      render();
+
+      // Footer inteligente
+      const footer      = document.getElementById('footer');
+      const mainContent = document.querySelector('main');
+
+      function checkFooterVisibility() {
+        if (!mainContent) return;
+        const { scrollTop, scrollHeight, clientHeight } = mainContent;
+        footer.classList.toggle('visible', scrollHeight - scrollTop - clientHeight < 200);
+      }
+
+      mainContent.addEventListener('scroll', checkFooterVisibility);
+      setTimeout(checkFooterVisibility, 100);
+    </script>
   </body>
 </html>
