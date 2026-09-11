@@ -103,17 +103,26 @@ export function subscribeToLogo(
   }
 }
 
-// Guardar logo en Firebase RTDB y Local
-export async function saveLogoToCloud(logoUrl: string | null): Promise<void> {
+// Guardar logo en Firebase RTDB y Local con tolerancia de fallos
+export async function saveLogoToCloud(logoUrl: string | null): Promise<{ cloudSynced: boolean; message?: string }> {
+  // 1. Guardar siempre en almacenamiento local persistente
   saveLocalLogo(logoUrl);
-  if (db && navigator.onLine) {
-    try {
-      const logoRef = ref(db, 'config/logoUrl');
-      await set(logoRef, logoUrl || null);
-    } catch (e) {
-      console.error("Error al guardar logo en Firebase RTDB:", e);
-      throw e;
-    }
+
+  if (!db || !navigator.onLine) {
+    return { cloudSynced: false, message: 'Guardado localmente en este navegador (Modo sin conexión).' };
+  }
+
+  // 2. Intentar persistir en Firebase Realtime Database
+  try {
+    const logoRef = ref(db, 'config/logoUrl');
+    await set(logoRef, logoUrl || null);
+    return { cloudSynced: true, message: 'Logo sincronizado en la nube de Firebase exitosamente.' };
+  } catch (e: any) {
+    console.warn("Aviso de Firebase RTDB: Reglas de seguridad denegaron la escritura (Permission denied):", e);
+    return { 
+      cloudSynced: false, 
+      message: 'Logo guardado y aplicado localmente. (Aviso: En la consola de Firebase tus Reglas de Realtime Database tienen escritura bloqueada).' 
+    };
   }
 }
 

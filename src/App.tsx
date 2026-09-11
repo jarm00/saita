@@ -167,8 +167,9 @@ export default function App() {
 
   // Actualizar logotipo institucional (Solo Administrador / Director)
   const handleUpdateLogo = async (newLogo: string | null) => {
-    await saveLogoToCloud(newLogo);
-    setLogoUrl(newLogo);
+    setLogoUrl(newLogo); // Actualizar inmediatamente en memoria para la cabecera y el login
+    const result = await saveLogoToCloud(newLogo);
+    return result;
   };
 
   // Comenzar edición de un proyecto

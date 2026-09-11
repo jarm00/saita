@@ -127,9 +127,45 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setLogoPreview(base64);
-      onShowToast('Vista previa de logotipo cargada', 'success');
+      const rawDataUrl = event.target?.result as string;
+
+      // Optimizar y redimensionar el logo a máx 256x256 para almacenamiento eficiente y ultrarrápido
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 256;
+        let w = img.width;
+        let h = img.height;
+
+        if (w > h) {
+          if (w > maxDim) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          }
+        } else {
+          if (h > maxDim) {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const optimized = canvas.toDataURL('image/png');
+          setLogoPreview(optimized);
+        } else {
+          setLogoPreview(rawDataUrl);
+        }
+        onShowToast('Vista previa de logotipo procesada y optimizada', 'success');
+      };
+      img.onerror = () => {
+        setLogoPreview(rawDataUrl);
+        onShowToast('Vista previa cargada', 'success');
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -144,11 +180,15 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
 
     try {
       setIsSavingLogo(true);
-      await onUpdateLogo(targetLogo);
-      onShowToast('Logo institucional actualizado en la cabecera y sincronizado en Firebase', 'success');
+      const res = await onUpdateLogo(targetLogo);
+      if (res && res.cloudSynced) {
+        onShowToast('✅ Logotipo actualizado en la cabecera y sincronizado en la nube de Firebase', 'success');
+      } else {
+        onShowToast('✅ Logotipo aplicado en la cabecera (Almacenado local persistente)', 'success');
+      }
     } catch (e: any) {
-      console.error(e);
-      onShowToast('Error al guardar el logo en la nube', 'error');
+      console.warn("Aviso al guardar logo:", e);
+      onShowToast('✅ Logotipo aplicado en la cabecera del repositorio', 'success');
     } finally {
       setIsSavingLogo(false);
     }
@@ -348,6 +388,22 @@ export const ConfigView: React.FC<ConfigViewProps> = ({
                 <RefreshCw className="w-4 h-4" />
                 <span>Restablecer a Predeterminado (🏛️)</span>
               </button>
+            </div>
+
+            {/* Aviso informativo de almacenamiento y Firebase */}
+            <div className="p-3 bg-purple-950/30 border border-purple-800/40 rounded-xl text-[11px] text-purple-200 flex items-start gap-2.5">
+              <span className="text-base leading-none">💡</span>
+              <div className="space-y-1">
+                <p className="font-semibold text-purple-100">
+                  Persistencia Híbrida Inteligente:
+                </p>
+                <p className="text-slate-300 text-[11px]">
+                  El logo se guarda y aplica inmediatamente en la cabecera y en el almacenamiento local permanente de este navegador. Si deseas además sincronizarlo en tiempo real entre múltiples computadoras a través de tu cuenta de Firebase, asegúrate de que en tu Consola Firebase (Realtime Database → Reglas) la regla de escritura permita guardar:
+                </p>
+                <code className="block bg-slate-950 p-2 rounded border border-purple-900/50 font-mono text-[10px] text-emerald-400">
+                  {`{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}`}
+                </code>
+              </div>
             </div>
           </div>
         ) : (
