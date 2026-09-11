@@ -105,15 +105,6 @@ export default function App() {
     };
   }, []);
 
-  // Guardar sesión de usuario
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('etrgc_user_session', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('etrgc_user_session');
-    }
-  }, [user]);
-
   // Guardar proyecto (Crear o Editar)
   const handleSaveProject = async (project: Project) => {
     try {
