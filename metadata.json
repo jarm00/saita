@@ -1,6 +1,0 @@
-{
-  "name": "Repositorio Digital ETRGC",
-  "description": "Repositorio Digital de la Escuela Técnica Robinsoniana - Complejo Educativo Gran Colombia con catálogo de proyectos socio-productivos y sincronización en tiempo real.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
