@@ -10,7 +10,7 @@
       body {
         background-color: #0b0f19;
         color: #f1f5f9;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -34,11 +34,11 @@
         gap: 16px;
       }
       .header-logo-container {
-        width: 56px;
-        height: 56px;
+        width: 58px;
+        height: 58px;
         border-radius: 12px;
         border: 1px solid rgba(244, 63, 94, 0.4);
-        background: rgba(15, 23, 42, 0.8);
+        background: rgba(15, 23, 42, 0.85);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -111,17 +111,19 @@
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
       }
       .user-badge button {
         background: #dc2626;
         border: none;
         color: white;
-        padding: 2px 8px;
-        border-radius: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
         cursor: pointer;
         font-size: 11px;
+        font-weight: bold;
       }
+      .user-badge button:hover { background: #b91c1c; }
       main {
         flex: 1;
         max-width: 1200px;
@@ -220,7 +222,6 @@
         font-size: 12px;
         font-weight: 700;
       }
-      .btn-secondary:hover { background: #334155; }
       footer {
         border-top: 1px solid #1f2937;
         background-color: #090d16;
@@ -254,26 +255,27 @@
         background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
         box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
       }
+      
+      /* PANTALLA COMPLETA DE INICIO DE SESIÓN */
       .modal-backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
+        background: radial-gradient(circle at center, #170d24 0%, #05040a 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 9999;
+        z-index: 99999;
         padding: 16px;
       }
       .modal-box {
-        background: #141124;
-        border: 1px solid #4c1d95;
-        border-left: 4px solid #a855f7;
-        border-radius: 16px;
-        padding: 32px 28px;
-        max-width: 420px;
+        background: #120e22;
+        border: 1px solid #581c87;
+        border-left: 5px solid #a855f7;
+        border-radius: 18px;
+        padding: 36px 30px;
+        max-width: 430px;
         width: 100%;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168, 85, 247, 0.15);
       }
     </style>
 
@@ -282,9 +284,43 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   </head>
   <body>
-    <div class="app-wrapper">
 
-      <!-- ENCABEZADO SUPERIOR CON LOGO DINÁMICO -->
+    <!-- MODAL DE INICIO DE SESIÓN OBLIGATORIO AL ENTRAR -->
+    <div class="modal-backdrop" id="login-modal">
+      <div class="modal-box">
+        <div style="text-align:center;margin-bottom:22px;">
+          <div style="font-size:46px;margin-bottom:8px;">🏛️</div>
+          <h2 style="color:#d8b4fe;font-size:20px;font-weight:900;letter-spacing:0.5px;">REPOSITORIO DIGITAL</h2>
+          <p style="color:#94a3b8;font-size:13px;margin-top:2px;">E.T.R. Gran Colombia — Acceso Restringido</p>
+        </div>
+
+        <div id="login-error" style="display:none;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:10px;border-radius:8px;font-size:13px;margin-bottom:14px;text-align:center;"></div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="color:#e2e8f0;">Usuario</label>
+          <input type="text" id="login-user" class="form-control" placeholder="director" autocomplete="username">
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="color:#e2e8f0;">Contraseña</label>
+          <input type="password" id="login-pass" class="form-control" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()">
+        </div>
+
+        <button onclick="handleLogin()" class="btn-submit" style="width:100%;padding:14px;font-size:14px;letter-spacing:0.5px;">🔐 INICIAR SESIÓN</button>
+
+        <div style="margin-top:22px;padding:14px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.25);border-radius:10px;font-size:12px;color:#cbd5e1;line-height:1.7;">
+          <strong style="color:#d8b4fe;">Niveles de acceso:</strong><br>
+          🔴 <strong>Director:</strong> Acceso total y cambio de Logo<br>
+          🟡 <strong>Coordinador:</strong> Cargar y moderar<br>
+          🟢 <strong>Profesor:</strong> Cargar proyectos
+        </div>
+      </div>
+    </div>
+
+    <!-- APLICACIÓN PRINCIPAL (OCULTA HASTA INICIAR SESIÓN) -->
+    <div class="app-wrapper" id="main-app" style="display:none;">
+
+      <!-- CABECERA SUPERIOR CON LOGO DINÁMICO -->
       <header>
         <div class="header-content">
           <div class="header-logo-container" id="top-logo-container">
@@ -298,16 +334,16 @@
         </div>
       </header>
 
-      <!-- NAVEGACIÓN -->
+      <!-- BARRA DE NAVEGACIÓN -->
       <nav>
         <div class="nav-container">
           <button class="nav-btn active" id="btn-catalog" onclick="setTab('catalog')">📚 CATÁLOGO</button>
           <button class="nav-btn" id="btn-upload" onclick="setTab('upload')">⬆️ CARGAR</button>
           <button class="nav-btn" id="btn-config" onclick="setTab('config')">⚙️ CONFIG</button>
           <button class="nav-btn" id="btn-info" onclick="setTab('info')">ℹ️ INFO</button>
-          <div class="user-badge" id="user-badge" style="display:none;">
+          <div class="user-badge" id="user-badge">
             <span id="user-role-text">🔴 Director</span>
-            <button onclick="logout()">Salir</button>
+            <button onclick="logout()">Cerrar Sesión</button>
           </div>
         </div>
       </nav>
@@ -335,19 +371,17 @@
           </div>
         </section>
 
-        <!-- PESTAÑA CONFIGURACIÓN (Gestión de Logo Exclusiva de Director) -->
+        <!-- PESTAÑA CONFIGURACIÓN (Gestión de Logo solo Administrador / Director) -->
         <section id="view-config" style="display:none;">
-          
-          <!-- SECCIÓN: CAMBIAR LOGO INSTITUCIONAL -->
           <div class="glass-effect" style="border-left: 4px solid #ef4444; margin-bottom: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-              <h2 style="color:#f87171; font-size:18px; font-weight:900;">🖼️ LOGOTIPO INSTITUCIONAL (CABECERA)</h2>
-              <span id="logo-permission-badge" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:9999px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #059669;">
-                Verificando permisos...
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+              <h2 style="color:#f87171; font-size:18px; font-weight:900;">🖼️ LOGOTIPO INSTITUCIONAL (PARTE SUPERIOR)</h2>
+              <span id="logo-permission-badge" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:9999px;">
+                Permisos
               </span>
             </div>
             <p style="color:#cbd5e1; font-size:13px; line-height:1.6; margin-bottom:16px;">
-              Este logotipo se mostrará en la parte superior izquierda de la página para todos los visitantes y se sincroniza en Firebase.
+              El logotipo que configure el Director aquí se mostrará en la parte superior izquierda de la página para todos los usuarios.
             </p>
 
             <!-- Vistas Previas -->
@@ -360,36 +394,30 @@
               </div>
               <div style="font-size:12px; color:#94a3b8; line-height:1.6;">
                 <strong>Estado:</strong> <span id="logo-status-desc">Predeterminado (Ícono 🏛️)</span><br>
-                Formatos compatibles: PNG, JPG, SVG o WebP.
+                Sube una imagen PNG con fondo transparente o JPG.
               </div>
             </div>
 
-            <!-- Controles visibles solo para el Administrador -->
+            <!-- Controles exclusivos para el Administrador (Director) -->
             <div id="admin-logo-controls">
               <div class="form-group" style="margin-bottom:14px;">
-                <label>Subir archivo de imagen desde tu equipo:</label>
+                <label>1. Seleccionar archivo de imagen de tu equipo:</label>
                 <input type="file" id="logo-file-input" accept="image/*" class="form-control" onchange="handleLogoFileSelect(event)">
               </div>
-              <div class="form-group" style="margin-bottom:14px;">
-                <label>O ingresar enlace URL de la imagen:</label>
-                <input type="url" id="logo-url-input" class="form-control" placeholder="https://ejemplo.com/logo-colegio.png" oninput="handleLogoUrlInput(event)">
+              <div class="form-group" style="margin-bottom:16px;">
+                <label>2. O escribir la URL web directa de la imagen:</label>
+                <input type="url" id="logo-url-input" class="form-control" placeholder="https://ejemplo.com/logo.png" oninput="handleLogoUrlInput(event)">
               </div>
-              <div style="display:flex; gap:10px;">
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <button onclick="saveInstitutionalLogo()" class="btn-success">💾 GUARDAR LOGO EN CABECERA</button>
                 <button onclick="resetInstitutionalLogo()" class="btn-secondary">Restablecer a 🏛️</button>
               </div>
             </div>
 
-            <!-- Bloque de aviso si no es Administrador -->
+            <!-- Aviso de bloqueo si entra como Coordinador o Profesor -->
             <div id="non-admin-logo-lock" style="display:none; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:12px; border-radius:8px; color:#fca5a5; font-size:12px;">
-              🔒 <strong>Acceso Restringido:</strong> Solo el Director (Administrador) tiene permisos para modificar el logo institucional.
+              🔒 <strong>Acceso Restringido:</strong> Solo el Director (Administrador) tiene permisos para cambiar el logo institucional.
             </div>
-          </div>
-
-          <!-- Base de datos vinculada -->
-          <div class="glass-effect">
-            <h3 style="color:#c084fc; font-size:15px; margin-bottom:8px;">🔗 Conexión Firebase</h3>
-            <p style="font-size:13px; color:#94a3b8;">Base de datos en tiempo real: <code>saitama-1-cf1ba-default-rtdb.firebaseio.com</code></p>
           </div>
         </section>
 
@@ -419,12 +447,12 @@
         <section id="view-info" style="display:none;">
           <div class="glass-effect">
             <h2 style="color:#ef4444;margin-bottom:10px;">🏛️ E.T.R. GRAN COLOMBIA</h2>
-            <p style="color:#cbd5e1;line-height:1.7;">Formación Técnica Robinsoniana — Proyectos Socio-Productivos.</p>
+            <p style="color:#cbd5e1;line-height:1.7;">Formando profesionales técnicos de excelencia desde 1983.</p>
           </div>
         </section>
       </main>
 
-      <!-- PIE DE PÁGINA (Con detección exacta Online / Offline) -->
+      <!-- PIE DE PÁGINA (Con indicador Online / Offline) -->
       <footer>
         <div class="footer-bottom">
           <div>🏛️ E.T.R. G.C</div>
@@ -437,32 +465,7 @@
       </footer>
     </div>
 
-    <!-- MODAL DE INICIO DE SESIÓN -->
-    <div class="modal-backdrop" id="login-modal" style="display:none;">
-      <div class="modal-box">
-        <div style="text-align:center;margin-bottom:18px;">
-          <div style="font-size:40px;margin-bottom:6px;">🏛️</div>
-          <h2 style="color:#d8b4fe;font-size:18px;font-weight:900;">REPOSITORIO DIGITAL</h2>
-          <p style="color:#94a3b8;font-size:12px;">E.T.R. Gran Colombia — Acceso Restringido</p>
-        </div>
-        <div id="login-error" style="display:none;background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:8px;border-radius:6px;font-size:12px;margin-bottom:12px;text-align:center;"></div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label>Usuario</label>
-          <input type="text" id="login-user" class="form-control" placeholder="director">
-        </div>
-        <div class="form-group" style="margin-bottom:16px;">
-          <label>Contraseña</label>
-          <input type="password" id="login-pass" class="form-control" placeholder="••••••••">
-        </div>
-        <button onclick="handleLogin()" class="btn-submit" style="width:100%;">🔐 INICIAR SESIÓN</button>
-        <div style="margin-top:16px;padding:10px;background:rgba(139,92,246,0.1);border-radius:8px;font-size:11px;color:#94a3b8;">
-          <strong style="color:#c084fc;">Niveles:</strong><br>
-          🔴 Director (Administrador) · 🟡 Coordinador · 🟢 Profesor
-        </div>
-      </div>
-    </div>
-
-    <!-- SCRIPT PRINCIPAL -->
+    <!-- LÓGICA JAVASCRIPT CON AUTENTICACIÓN BLOQUEANTE -->
     <script>
       const firebaseConfig = {
         apiKey: "AIzaSyCU5Zm0vwW21FE2irdoFwOHd0pX2Q76OAE",
@@ -479,9 +482,104 @@
       let allProjects = [];
       let currentLogo = localStorage.getItem('etrgc_custom_logo') || null;
       let tempLogoPreview = null;
-      let currentUser = localStorage.getItem('etrgc_user') ? JSON.parse(localStorage.getItem('etrgc_user')) : null;
+      let currentUser = null; // Siempre inicia desconectado para pedir contraseña
 
-      // 1. APLICAR LOGO EN LA PARTE SUPERIOR
+      // 1. INICIALIZAR FIREBASE Y ESTADOS
+      try {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+
+        database.ref('.info/connected').on('value', (snap) => {
+          updateConnectionStatus(snap.val() === true && navigator.onLine);
+        });
+
+        database.ref('config/logoUrl').on('value', (snap) => {
+          const cloudLogo = snap.val();
+          if (cloudLogo !== undefined) {
+            currentLogo = cloudLogo;
+            if (cloudLogo) localStorage.setItem('etrgc_custom_logo', cloudLogo);
+            else localStorage.removeItem('etrgc_custom_logo');
+            renderHeaderLogo(cloudLogo);
+          }
+        });
+
+        database.ref('proyectos').on('value', (snap) => {
+          const val = snap.val();
+          allProjects = val ? Object.values(val) : [];
+          renderProjects();
+        });
+      } catch (err) {
+        console.warn("Firebase:", err);
+        updateConnectionStatus(navigator.onLine);
+      }
+
+      function updateConnectionStatus(isOnline) {
+        const pill = document.getElementById('connection-status');
+        const text = document.getElementById('connection-text');
+        if (!pill || !text) return;
+        pill.className = isOnline ? "footer-status-pill" : "footer-status-pill is-offline";
+        text.textContent = isOnline ? "Online" : "Offline";
+      }
+
+      window.addEventListener('online', () => updateConnectionStatus(true));
+      window.addEventListener('offline', () => updateConnectionStatus(false));
+
+      // 2. FUNCIÓN DE LOGUEO CON CONTRASEÑA OBLIGATORIA
+      function handleLogin() {
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value;
+        const err = document.getElementById('login-error');
+
+        // Credenciales oficiales exactas
+        const USERS = {
+          'director':    { pass: 'ETRGC*Caracas#2026', role: 'Director' },
+          'coordinador': { pass: 'ETRGC2026',          role: 'Coordinador' },
+          'profesor':    { pass: 'Profe2026',          role: 'Profesor' }
+        };
+
+        if (USERS[u] && USERS[u].pass === p) {
+          currentUser = { username: u, role: USERS[u].role };
+          err.style.display = "none";
+          
+          // Ocultar modal de login y mostrar la app completa
+          document.getElementById('login-modal').style.display = "none";
+          document.getElementById('main-app').style.display = "flex";
+          document.getElementById('user-role-text').textContent = "🔴 " + currentUser.role + " | " + currentUser.username;
+
+          // Configurar permisos del logo según el rol
+          const isAdmin = currentUser.role === 'Director';
+          document.getElementById('admin-logo-controls').style.display = isAdmin ? 'block' : 'none';
+          document.getElementById('non-admin-logo-lock').style.display = isAdmin ? 'none' : 'block';
+
+          const badge = document.getElementById('logo-permission-badge');
+          if (isAdmin) {
+            badge.textContent = "Permiso Concedido: Administrador";
+            badge.style.background = "rgba(16,185,129,0.2)";
+            badge.style.color = "#34d399";
+            badge.style.border = "1px solid #059669";
+          } else {
+            badge.textContent = "Solo Administrador (Director)";
+            badge.style.background = "rgba(239,68,68,0.2)";
+            badge.style.color = "#f87171";
+            badge.style.border = "1px solid #ef4444";
+          }
+
+          renderHeaderLogo(currentLogo);
+          renderProjects();
+        } else {
+          err.style.display = "block";
+          err.textContent = "❌ Usuario o contraseña incorrectos. Revisa las mayúsculas y caracteres.";
+        }
+      }
+
+      function logout() {
+        currentUser = null;
+        document.getElementById('login-pass').value = '';
+        document.getElementById('main-app').style.display = "none";
+        document.getElementById('login-modal').style.display = "flex";
+      }
+
+      // 3. LOGO EN CABECERA
       function renderHeaderLogo(logoUrl) {
         const topContainer = document.getElementById('top-logo-container');
         const configPreview = document.getElementById('config-logo-preview');
@@ -500,129 +598,9 @@
         }
       }
 
-      // 2. DETECCIÓN ONLINE / OFFLINE
-      function updateConnectionStatus(isOnline) {
-        const pill = document.getElementById('connection-status');
-        const text = document.getElementById('connection-text');
-        if (!pill || !text) return;
-
-        if (isOnline) {
-          pill.className = "footer-status-pill";
-          text.textContent = "Online";
-        } else {
-          pill.className = "footer-status-pill is-offline";
-          text.textContent = "Offline";
-        }
-      }
-
-      // 3. INICIALIZACIÓN DE FIREBASE
-      try {
-        firebase.initializeApp(firebaseConfig);
-        database = firebase.database();
-
-        // Escuchar socket de conexión
-        database.ref('.info/connected').on('value', (snap) => {
-          updateConnectionStatus(snap.val() === true && navigator.onLine);
-        });
-
-        // Escuchar el logotipo configurado en la nube
-        database.ref('config/logoUrl').on('value', (snap) => {
-          const cloudLogo = snap.val();
-          if (cloudLogo !== undefined) {
-            currentLogo = cloudLogo;
-            if (cloudLogo) {
-              localStorage.setItem('etrgc_custom_logo', cloudLogo);
-            } else {
-              localStorage.removeItem('etrgc_custom_logo');
-            }
-            renderHeaderLogo(cloudLogo);
-          }
-        });
-
-        // Escuchar proyectos
-        database.ref('proyectos').on('value', (snap) => {
-          const val = snap.val();
-          allProjects = val ? Object.values(val) : [];
-          renderProjects();
-        });
-      } catch (err) {
-        console.warn("Firebase error:", err);
-        updateConnectionStatus(navigator.onLine);
-      }
-
-      window.addEventListener('online', () => updateConnectionStatus(true));
-      window.addEventListener('offline', () => updateConnectionStatus(false));
-
-      // 4. CONTROL DE ACCESO Y PERMISOS DEL LOGO
-      function checkAuth() {
-        const modal = document.getElementById('login-modal');
-        const badge = document.getElementById('user-badge');
-        const roleText = document.getElementById('user-role-text');
-        const adminControls = document.getElementById('admin-logo-controls');
-        const lockNotice = document.getElementById('non-admin-logo-lock');
-        const permBadge = document.getElementById('logo-permission-badge');
-
-        if (!currentUser) {
-          modal.style.display = "flex";
-          badge.style.display = "none";
-        } else {
-          modal.style.display = "none";
-          badge.style.display = "flex";
-          roleText.textContent = "🔴 " + currentUser.role + " | " + currentUser.username;
-        }
-
-        // Validar si es Administrador (Director)
-        const isAdmin = currentUser && currentUser.role === 'Director';
-        if (adminControls) adminControls.style.display = isAdmin ? 'block' : 'none';
-        if (lockNotice) lockNotice.style.display = isAdmin ? 'none' : 'block';
-        if (permBadge) {
-          if (isAdmin) {
-            permBadge.textContent = "Permiso Concedido: Administrador";
-            permBadge.style.background = "rgba(16,185,129,0.2)";
-            permBadge.style.color = "#34d399";
-            permBadge.style.borderColor = "#059669";
-          } else {
-            permBadge.textContent = "Solo Administrador (Director)";
-            permBadge.style.background = "rgba(239,68,68,0.2)";
-            permBadge.style.color = "#f87171";
-            permBadge.style.borderColor = "#ef4444";
-          }
-        }
-      }
-
-      function handleLogin() {
-        const u = document.getElementById('login-user').value.trim();
-        const p = document.getElementById('login-pass').value;
-        const err = document.getElementById('login-error');
-
-        const USERS = {
-          'director':    { pass: 'ETRGC*Caracas#2026', role: 'Director' },
-          'coordinador': { pass: 'ETRGC2026',          role: 'Coordinador' },
-          'profesor':    { pass: 'Profe2026',          role: 'Profesor' }
-        };
-
-        if (USERS[u] && USERS[u].pass === p) {
-          currentUser = { username: u, role: USERS[u].role };
-          localStorage.setItem('etrgc_user', JSON.stringify(currentUser));
-          err.style.display = "none";
-          checkAuth();
-        } else {
-          err.style.display = "block";
-          err.textContent = "Credenciales incorrectas.";
-        }
-      }
-
-      function logout() {
-        currentUser = null;
-        localStorage.removeItem('etrgc_user');
-        checkAuth();
-      }
-
-      // 5. GESTIÓN DEL LOGOTIPO
       function handleLogoFileSelect(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(evt) {
           tempLogoPreview = evt.target.result;
@@ -644,10 +622,9 @@
           alert('Acceso denegado: Solo el Director puede cambiar el logo.');
           return;
         }
-
         const logoToSave = tempLogoPreview || currentLogo;
         if (!logoToSave) {
-          alert('Por favor selecciona una imagen primero.');
+          alert('Selecciona una imagen primero.');
           return;
         }
 
@@ -656,9 +633,9 @@
         renderHeaderLogo(logoToSave);
 
         if (database) {
-          database.ref('config/logoUrl').set(logoToSave)
-            .then(() => alert('✅ Logotipo guardado en la nube y aplicado en la cabecera.'))
-            .catch(() => alert('Guardado en modo local.'));
+          database.ref('config/logoUrl').set(logoToSave).then(() => {
+            alert('✅ Logotipo guardado en la nube y actualizado en la cabecera superior.');
+          });
         } else {
           alert('✅ Logotipo guardado localmente.');
         }
@@ -666,24 +643,20 @@
 
       function resetInstitutionalLogo() {
         if (!currentUser || currentUser.role !== 'Director') {
-          alert('Acceso denegado: Solo el Director puede cambiar el logo.');
+          alert('Acceso denegado: Solo el Director puede restablecer el logo.');
           return;
         }
-
         if (confirm('¿Restablecer el logotipo al ícono original 🏛️?')) {
           currentLogo = null;
           tempLogoPreview = null;
           localStorage.removeItem('etrgc_custom_logo');
           renderHeaderLogo(null);
-
-          if (database) {
-            database.ref('config/logoUrl').remove();
-          }
-          alert('Logo restablecido correctamente.');
+          if (database) database.ref('config/logoUrl').remove();
+          alert('Logotipo restablecido correctamente.');
         }
       }
 
-      // 6. NAVEGACIÓN Y PROYECTOS
+      // 4. PESTAÑAS Y PROYECTOS
       function setTab(tab) {
         ['catalog', 'upload', 'config', 'info'].forEach(t => {
           const sec = document.getElementById('view-' + t);
@@ -699,6 +672,7 @@
         document.getElementById('stat-pending').textContent = allProjects.filter(p => p.status === 'pending').length;
 
         const container = document.getElementById('projects-container');
+        if (!container) return;
         if (allProjects.length === 0) {
           container.innerHTML = '<div class="glass-effect" style="text-align:center;color:#c4b5fd;">No hay proyectos aún</div>';
           return;
@@ -734,10 +708,10 @@
         }
       }
 
-      // Inicialización al cargar la página
-      renderHeaderLogo(currentLogo);
-      checkAuth();
-      updateConnectionStatus(navigator.onLine);
+      // Al cargar, enfocar campo de usuario
+      window.onload = function() {
+        document.getElementById('login-user').focus();
+      };
     </script>
   </body>
 </html>
